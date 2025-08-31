@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "video-generator-episodes-dev",
+    "staging": "video-generator-episodes-staging",
+    "production": "video-generator-episodes-prod"
+  },
+  "targets": {},
+  "etags": {}
+}

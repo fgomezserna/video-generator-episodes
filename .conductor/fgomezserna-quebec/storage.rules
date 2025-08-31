@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function for file validation
+    function isValidFile() {
+      return request.resource.size < 100 * 1024 * 1024 // 100MB max
+             && request.resource.contentType.matches('(image|video|audio)/.*');
+    }
+    // Users can upload and manage their own content
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId && isValidFile();
+    }
+    
+    // Project-specific uploads (use userId in path to avoid cross-service queries)
+    match /projects/{userId}/{projectId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId && isValidFile();
+    }
+    
+    // Generated videos (use userId in path to avoid cross-service queries)
+    match /videos/{userId}/{videoId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId && isValidFile();
+    }
+    
+    // Public assets (templates, samples)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId && isValidFile();
+      // Auto-delete after 24 hours (handled by Cloud Functions)
+    }
+    
+  }
+}

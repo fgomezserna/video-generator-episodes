@@ -1,0 +1,45 @@
+{
+  "name": "video-generator-episodes",
+  "version": "1.0.0",
+  "description": "Firebase-based video generation platform",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "deploy": "firebase deploy",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:storage": "firebase deploy --only storage",
+    "functions:serve": "cd functions && npm run serve",
+    "functions:shell": "cd functions && npm run shell",
+    "functions:logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "firebase": "^10.0.0",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
+  },
+  "keywords": [
+    "firebase",
+    "video-generation",
+    "cloud-functions",
+    "firestore",
+    "nextjs"
+  ],
+  "author": "",
+  "license": "ISC"
+}
