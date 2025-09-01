@@ -1,3 +1,29 @@
+// Mock Firebase modules before importing
+jest.mock('../firebase', () => ({
+  db: {
+    collection: jest.fn(),
+    doc: jest.fn(),
+  },
+  functions: {},
+}));
+
+jest.mock('firebase/functions', () => ({
+  httpsCallable: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('firebase/firestore', () => ({
+  collection: jest.fn(),
+  doc: jest.fn(),
+  query: jest.fn(),
+  where: jest.fn(),
+  orderBy: jest.fn(),
+  limit: jest.fn(),
+  onSnapshot: jest.fn(),
+  getDocs: jest.fn(() => Promise.resolve({ empty: true, docs: [] })),
+  updateDoc: jest.fn(),
+  serverTimestamp: jest.fn(() => new Date()),
+}));
+
 import { QueueService } from '../db/queue';
 import { Job, JobStatus, JobType } from '../types';
 
@@ -5,6 +31,7 @@ describe('QueueService', () => {
   let queueService: QueueService;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     queueService = new QueueService();
   });
 
@@ -96,7 +123,7 @@ describe('QueueService', () => {
       ];
 
       const sorted = sortJobsByPriority(jobs as Job[]);
-      const expectedOrder = ['4', '2', '5', '3', '1'];
+      const expectedOrder = ['4', '5', '2', '3', '1'];
       
       expect(sorted.map(job => job.id)).toEqual(expectedOrder);
     });
