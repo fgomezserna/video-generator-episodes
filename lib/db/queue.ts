@@ -299,3 +299,53 @@ export const enqueueImageProcessing = async (
     maxRetries: 2,
   });
 };
+
+export const enqueueScriptGeneration = async (
+  projectId: string,
+  scriptOptions: {
+    topic: string;
+    contentType: 'kids' | 'marketing' | 'documentary' | 'educational';
+    duration: number;
+    targetAudience: string;
+    tone: string;
+    characters?: string[];
+    additionalInstructions?: string;
+  }
+) => {
+  // Note: userId is automatically added from authentication context in Firebase Functions
+  return queueService.enqueueJob('script_generation', {
+    projectId,
+    templateId: '',
+    variables: {},
+    quality: 'standard',
+    aspectRatio: '16:9',
+    metadata: { scriptOptions },
+  }, {
+    priority: 'high',
+    maxRetries: 2,
+  });
+};
+
+export const enqueueStoryboardGeneration = async (
+  projectId: string,
+  storyboardOptions: {
+    script: string;
+    scriptId?: string;
+    contentType: 'kids' | 'marketing' | 'documentary' | 'educational';
+    style: string;
+    aspectRatio: '16:9' | '9:16' | '4:3' | '1:1';
+    additionalInstructions?: string;
+  }
+) => {
+  return queueService.enqueueJob('storyboard_generation', {
+    projectId,
+    templateId: '',
+    variables: {},
+    quality: 'standard',
+    aspectRatio: storyboardOptions.aspectRatio,
+    metadata: { storyboardOptions },
+  }, {
+    priority: 'high',
+    maxRetries: 2,
+  });
+};

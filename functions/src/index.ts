@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { Job, JobData, NotificationEvent, QueueMetrics } from "../../lib/types";
+import { Job, JobData, NotificationEvent, QueueMetrics, Script, Storyboard, AIUsageMetrics } from "../../lib/types";
+import { AIManager } from "./ai";
 
 admin.initializeApp();
 
@@ -9,6 +10,14 @@ const QUEUE_COLLECTION = "jobs";
 const METRICS_COLLECTION = "queueMetrics";
 const NOTIFICATIONS_COLLECTION = "notifications";
 const DEAD_LETTER_COLLECTION = "deadLetterJobs";
+const SCRIPTS_COLLECTION = "scripts";
+const STORYBOARDS_COLLECTION = "storyboards";
+const AI_USAGE_COLLECTION = "aiUsageMetrics";
+
+const aiManager = new AIManager({
+  openai: process.env.OPENAI_API_KEY,
+  anthropic: process.env.ANTHROPIC_API_KEY,
+});
 
 export const helloWorld = functions.https.onRequest((request, response) => {
   functions.logger.info("Hello logs!", {structuredData: true});
@@ -179,6 +188,12 @@ async function processJob(jobId: string, job: Job): Promise<void> {
         break;
       case 'template_processing':
         result = await processTemplateProcessing(job.data);
+        break;
+      case 'script_generation':
+        result = await processScriptGeneration(job.data);
+        break;
+      case 'storyboard_generation':
+        result = await processStoryboardGeneration(job.data);
         break;
       default:
         throw new Error(`Unknown job type: ${job.type}`);
@@ -421,3 +436,168 @@ export const cleanupOldJobs = functions.pubsub.schedule('every 24 hours').onRun(
     functions.logger.error('Error cleaning up old jobs:', error);
   }
 });
+
+async function processScriptGeneration(data: JobData): Promise<any> {
+  functions.logger.info('Starting script generation', { projectId: data.projectId });
+  
+  try {
+    if (!data.metadata?.scriptOptions) {
+      throw new Error('Script options not provided in job data');
+    }
+
+    const scriptOptions = data.metadata.scriptOptions;
+    const aiResponse = await aiManager.generateScript(scriptOptions, undefined, data.userId);
+    
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(aiResponse.content);
+    } catch (parseError) {
+      throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+    }
+
+    const scriptId = db.collection(SCRIPTS_COLLECTION).doc().id;
+    const scriptData: Partial<Script> = {
+      id: scriptId,
+      projectId: data.projectId,
+      userId: data.userId,
+      title: parsedContent.title || `Script for ${data.projectId}`,
+      contentType: scriptOptions.contentType,
+      content: aiResponse.content,
+      scenes: parsedContent.scenes || [],
+      metadata: {
+        duration: parsedContent.metadata?.duration || scriptOptions.duration,
+        wordCount: parsedContent.metadata?.wordCount || 0,
+        characterCount: parsedContent.metadata?.characterCount || aiResponse.content.length,
+        targetAudience: scriptOptions.targetAudience,
+        tone: scriptOptions.tone,
+      },
+      aiProvider: aiResponse.provider,
+      model: aiResponse.model,
+      promptUsed: JSON.stringify(scriptOptions),
+      status: 'draft',
+      version: 1,
+      createdAt: admin.firestore.FieldValue.serverTimestamp() as any,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp() as any,
+    };
+
+    await db.collection(SCRIPTS_COLLECTION).doc(scriptId).set(scriptData);
+
+    await recordAIUsage({
+      userId: data.userId,
+      projectId: data.projectId,
+      provider: aiResponse.provider,
+      model: aiResponse.model,
+      operation: 'script_generation',
+      tokensUsed: aiResponse.tokensUsed,
+      cost: calculateCost(aiResponse.provider, aiResponse.tokensUsed),
+      responseTime: aiResponse.responseTime,
+    });
+
+    return {
+      scriptId,
+      scriptData: parsedContent,
+      aiProvider: aiResponse.provider,
+      model: aiResponse.model,
+      tokensUsed: aiResponse.tokensUsed,
+    };
+  } catch (error) {
+    functions.logger.error('Script generation failed:', error);
+    throw error;
+  }
+}
+
+async function processStoryboardGeneration(data: JobData): Promise<any> {
+  functions.logger.info('Starting storyboard generation', { projectId: data.projectId });
+  
+  try {
+    if (!data.metadata?.storyboardOptions) {
+      throw new Error('Storyboard options not provided in job data');
+    }
+
+    const storyboardOptions = data.metadata.storyboardOptions;
+    const aiResponse = await aiManager.generateStoryboard(storyboardOptions, undefined, data.userId);
+    
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(aiResponse.content);
+    } catch (parseError) {
+      throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+    }
+
+    const storyboardId = db.collection(STORYBOARDS_COLLECTION).doc().id;
+    const storyboardData: Partial<Storyboard> = {
+      id: storyboardId,
+      scriptId: storyboardOptions.scriptId || '',
+      projectId: data.projectId,
+      userId: data.userId,
+      scenes: parsedContent.scenes || [],
+      style: storyboardOptions.style,
+      aspectRatio: storyboardOptions.aspectRatio,
+      aiProvider: aiResponse.provider,
+      model: aiResponse.model,
+      promptUsed: JSON.stringify(storyboardOptions),
+      status: 'draft',
+      createdAt: admin.firestore.FieldValue.serverTimestamp() as any,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp() as any,
+    };
+
+    await db.collection(STORYBOARDS_COLLECTION).doc(storyboardId).set(storyboardData);
+
+    await recordAIUsage({
+      userId: data.userId,
+      projectId: data.projectId,
+      provider: aiResponse.provider,
+      model: aiResponse.model,
+      operation: 'storyboard_generation',
+      tokensUsed: aiResponse.tokensUsed,
+      cost: calculateCost(aiResponse.provider, aiResponse.tokensUsed),
+      responseTime: aiResponse.responseTime,
+    });
+
+    return {
+      storyboardId,
+      storyboardData: parsedContent,
+      aiProvider: aiResponse.provider,
+      model: aiResponse.model,
+      tokensUsed: aiResponse.tokensUsed,
+    };
+  } catch (error) {
+    functions.logger.error('Storyboard generation failed:', error);
+    throw error;
+  }
+}
+
+async function recordAIUsage(metrics: Omit<AIUsageMetrics, 'id' | 'timestamp'>): Promise<void> {
+  try {
+    const usageId = db.collection(AI_USAGE_COLLECTION).doc().id;
+    const usageData: Partial<AIUsageMetrics> = {
+      ...metrics,
+      id: usageId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp() as any,
+    };
+
+    await db.collection(AI_USAGE_COLLECTION).doc(usageId).set(usageData);
+    functions.logger.info('AI usage recorded', { usageId, provider: metrics.provider, cost: metrics.cost });
+  } catch (error) {
+    functions.logger.error('Error recording AI usage:', error);
+  }
+}
+
+function calculateCost(provider: string, tokensUsed: number): number {
+  const rates = {
+    openai: {
+      gpt4: 0.03 / 1000, // $0.03 per 1K tokens
+    },
+    anthropic: {
+      claude3: 0.015 / 1000, // $0.015 per 1K tokens
+    },
+  };
+
+  if (provider === 'openai') {
+    return tokensUsed * rates.openai.gpt4;
+  } else if (provider === 'anthropic') {
+    return tokensUsed * rates.anthropic.claude3;
+  }
+
+  return 0;
+}

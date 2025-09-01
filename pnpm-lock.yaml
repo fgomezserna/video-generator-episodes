@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@anthropic-ai/sdk':
+    specifier: ^0.60.0
+    version: 0.60.0
   firebase:
     specifier: ^10.0.0
     version: 10.14.1
@@ -14,6 +17,9 @@ dependencies:
   next:
     specifier: ^14.0.0
     version: 14.2.32(@babel/core@7.28.3)(react-dom@18.3.1)(react@18.3.1)
+  openai:
+    specifier: ^5.16.0
+    version: 5.16.0
   react:
     specifier: ^18.0.0
     version: 18.3.1
@@ -71,6 +77,11 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.30
+
+  /@anthropic-ai/sdk@0.60.0:
+    resolution: {integrity: sha512-9zu/TXaUy8BZhXedDtt1wT3H4LOlpKDO1/ftiFpeR3N1PCr3KJFKkxxlQWWt1NNp08xSwUNJ3JNY8yhl8av6eQ==}
+    hasBin: true
+    dev: false
 
   /@babel/code-frame@7.27.1:
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -5456,6 +5467,19 @@ packages:
     dependencies:
       mimic-fn: 2.1.0
     dev: true
+
+  /openai@5.16.0:
+    resolution: {integrity: sha512-hoEH8ZNvg1HXjU9mp88L/ZH8O082Z8r6FHCXGiWAzVRrEv443aI57qhch4snu07yQydj+AUAWLenAiBXhu89Tw==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.23.8
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dev: false
 
   /optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
