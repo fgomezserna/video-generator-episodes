@@ -173,7 +173,7 @@ export interface Category {
   updatedAt: Date;
 }
 
-export type JobType = 'video_generation' | 'audio_synthesis' | 'image_processing' | 'template_processing';
+export type JobType = 'video_generation' | 'audio_synthesis' | 'image_processing' | 'template_processing' | 'script_generation' | 'storyboard_generation';
 
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'retrying' | 'dead_letter';
 
@@ -238,4 +238,113 @@ export interface NotificationEvent {
   status: 'pending' | 'sent' | 'failed';
   sentAt?: Date;
   createdAt: Date;
+}
+
+export type AIProvider = 'openai' | 'anthropic';
+
+export type ContentType = 'kids' | 'marketing' | 'documentary' | 'educational';
+
+export interface PromptTemplate {
+  id: string;
+  name: string;
+  contentType: ContentType;
+  systemPrompt: string;
+  userPromptTemplate: string;
+  variables: string[];
+  provider: AIProvider;
+  model: string;
+  maxTokens: number;
+  temperature: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Script {
+  id: string;
+  projectId: string;
+  userId: string;
+  title: string;
+  contentType: ContentType;
+  content: string;
+  scenes: ScriptScene[];
+  metadata: {
+    duration: number;
+    wordCount: number;
+    characterCount: number;
+    targetAudience: string;
+    tone: string;
+  };
+  aiProvider: AIProvider;
+  model: string;
+  promptUsed: string;
+  status: 'draft' | 'approved' | 'rejected';
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ScriptScene {
+  id: string;
+  title: string;
+  description: string;
+  dialogue: string;
+  visualElements: string[];
+  duration: number;
+  characters: string[];
+  setting: string;
+  mood: string;
+}
+
+export interface Storyboard {
+  id: string;
+  scriptId: string;
+  projectId: string;
+  userId: string;
+  scenes: StoryboardScene[];
+  style: string;
+  aspectRatio: '16:9' | '9:16' | '4:3' | '1:1';
+  aiProvider: AIProvider;
+  model: string;
+  promptUsed: string;
+  status: 'draft' | 'approved' | 'rejected';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface StoryboardScene {
+  id: string;
+  sceneNumber: number;
+  title: string;
+  description: string;
+  visualPrompt: string;
+  characters: string[];
+  setting: string;
+  composition: string;
+  lighting: string;
+  cameraAngle: string;
+  mood: string;
+  duration: number;
+}
+
+export interface AIUsageMetrics {
+  id: string;
+  userId: string;
+  projectId: string;
+  provider: AIProvider;
+  model: string;
+  operation: 'script_generation' | 'storyboard_generation';
+  tokensUsed: number;
+  cost: number;
+  responseTime: number;
+  timestamp: Date;
+}
+
+export interface RateLimitConfig {
+  provider: AIProvider;
+  requestsPerMinute: number;
+  requestsPerHour: number;
+  requestsPerDay: number;
+  costPerRequest: number;
+  maxCostPerUser: number;
 }
