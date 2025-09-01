@@ -30,11 +30,14 @@ jest.mock('firebase/firestore', () => ({
   limit: jest.fn((count) => ({ count })),
   startAfter: jest.fn((doc) => ({ doc })),
   Timestamp: {
-    fromDate: jest.fn((date) => ({
-      toDate: () => date,
-      seconds: Math.floor(date.getTime() / 1000),
-      nanoseconds: 0,
-    })),
+    fromDate: jest.fn((date) => {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      return {
+        toDate: () => dateObj,
+        seconds: Math.floor(dateObj.getTime() / 1000),
+        nanoseconds: 0,
+      };
+    }),
   },
 }))
 
