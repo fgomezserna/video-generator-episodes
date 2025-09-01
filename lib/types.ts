@@ -172,3 +172,70 @@ export interface Category {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type JobType = 'video_generation' | 'audio_synthesis' | 'image_processing' | 'template_processing';
+
+export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'retrying' | 'dead_letter';
+
+export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface JobData {
+  projectId: string;
+  userId: string;
+  templateId: string;
+  variables: Record<string, any>;
+  quality: 'draft' | 'standard' | 'high' | 'premium';
+  aspectRatio: '16:9' | '9:16' | '4:3' | '1:1';
+  metadata?: Record<string, any>;
+}
+
+export interface Job {
+  id: string;
+  type: JobType;
+  status: JobStatus;
+  priority: JobPriority;
+  data: JobData;
+  progress: number;
+  result?: any;
+  error?: {
+    message: string;
+    code: string;
+    details?: any;
+    stack?: string;
+  };
+  retryCount: number;
+  maxRetries: number;
+  retryDelay: number;
+  nextRetry?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  processingTime?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface QueueMetrics {
+  id: string;
+  queueName: string;
+  totalJobs: number;
+  pendingJobs: number;
+  processingJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  averageProcessingTime: number;
+  throughput: number;
+  timestamp: Date;
+}
+
+export interface NotificationEvent {
+  id: string;
+  userId: string;
+  type: 'job_completed' | 'job_failed' | 'project_ready' | 'system_alert';
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  channels: ('email' | 'push' | 'in_app')[];
+  status: 'pending' | 'sent' | 'failed';
+  sentAt?: Date;
+  createdAt: Date;
+}
