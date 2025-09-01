@@ -161,7 +161,7 @@ describe('ProjectsDB', () => {
       expect(updateCall).toHaveProperty('title', 'Updated Title')
       expect(updateCall).toHaveProperty('status', 'in_review')
       expect(updateCall).toHaveProperty('updatedAt')
-      expect(updateCall).toHaveProperty('timeline.lastModified')
+      expect(updateCall['timeline.lastModified']).toBeDefined()
     })
 
     it('should update timeline when status changes', async () => {
@@ -171,7 +171,7 @@ describe('ProjectsDB', () => {
       await ProjectsDB.update(projectId, updates)
 
       const updateCall = mockedUpdateDoc.mock.calls[0][1]
-      expect(updateCall).toHaveProperty('timeline.submitted')
+      expect(updateCall['timeline.submitted']).toBeDefined()
     })
 
     it('should set correct timeline fields for different statuses', async () => {
@@ -188,7 +188,7 @@ describe('ProjectsDB', () => {
         await ProjectsDB.update(projectId, { status })
         
         const updateCall = mockedUpdateDoc.mock.calls[0][1]
-        expect(updateCall).toHaveProperty(expectedField)
+        expect(updateCall[expectedField]).toBeDefined()
       }
     })
   })
@@ -284,11 +284,11 @@ describe('ProjectsDB', () => {
       const collaboratorId = 'collaborator-123'
       const permission = 'edit' as const
 
-      const mockProject: Project = {
+      const mockFullProject = {
         ...mockProject,
         id: projectId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
         collaboration: {
           isPublic: false,
           sharedWith: [],
@@ -298,7 +298,7 @@ describe('ProjectsDB', () => {
 
       const mockDocSnap = {
         exists: () => true,
-        data: () => mockProject,
+        data: () => mockFullProject,
         id: projectId
       }
 
@@ -319,11 +319,11 @@ describe('ProjectsDB', () => {
       const projectId = 'project-123'
       const collaboratorId = 'collaborator-123'
 
-      const mockProject: Project = {
+      const mockProjectWithCollaborators = {
         ...mockProject,
         id: projectId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
         collaboration: {
           isPublic: false,
           sharedWith: [collaboratorId, 'other-user'],
@@ -333,7 +333,7 @@ describe('ProjectsDB', () => {
 
       const mockDocSnap = {
         exists: () => true,
-        data: () => mockProject,
+        data: () => mockProjectWithCollaborators,
         id: projectId
       }
 
