@@ -1,53 +1,141 @@
 import { Character, Template, Category } from './types';
 
+// Helper function to create default version for characters
+const createDefaultVersion = (appearance: any, personality: string[], voiceId?: string) => ({
+  id: 'version-1',
+  version: 'v1.0',
+  description: 'Initial version',
+  referenceImages: [],
+  appearance: {
+    ...appearance,
+    physicalTraits: [],
+    clothingStyle: 'casual'
+  },
+  personality,
+  voiceId,
+  prompts: {
+    base: 'A character illustration',
+    consistency: 'same character, consistent design',
+    style: 'professional digital art, clean lines'
+  },
+  metadata: {
+    generationSettings: {
+      model: 'stable-diffusion' as const,
+      styleStrength: 0.7,
+      consistencyWeight: 0.8,
+      guidanceScale: 7.5,
+      steps: 30
+    },
+    performanceMetrics: {
+      avgGenerationTime: 0,
+      consistencyScore: 0,
+      qualityScore: 0
+    }
+  },
+  isActive: true,
+  createdAt: new Date()
+});
+
 export const seedCharacters: Omit<Character, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
     name: 'Luna',
     description: 'A cheerful young girl who loves adventure and learning',
-    appearance: {
+    category: 'educational',
+    tags: ['child', 'adventure', 'learning'],
+    currentVersion: 'version-1',
+    versions: [createDefaultVersion({
       age: 'child',
       gender: 'female',
       style: 'cartoon',
       colors: ['#FF6B9D', '#4ECDC4', '#FFE66D']
+    }, ['curious', 'energetic', 'kind', 'brave'], 'luna-child-voice')],
+    library: {
+      isPublic: true,
+      isReusable: true,
+      usageCount: 0,
+      rating: 0,
+      reviews: 0
     },
-    personality: ['curious', 'energetic', 'kind', 'brave'],
-    voiceId: 'luna-child-voice'
+    ownership: {
+      createdBy: 'system',
+      sharedWith: [],
+      permissions: {}
+    }
   },
   {
     name: 'Max',
     description: 'A friendly robot companion with advanced AI',
-    appearance: {
+    category: 'sci-fi',
+    tags: ['robot', 'AI', 'companion'],
+    currentVersion: 'version-1',
+    versions: [createDefaultVersion({
       age: 'adult',
       gender: 'non-binary',
       style: 'futuristic',
       colors: ['#00D2FF', '#3A7BD5', '#FFFFFF']
+    }, ['logical', 'helpful', 'patient', 'witty'], 'max-robot-voice')],
+    library: {
+      isPublic: true,
+      isReusable: true,
+      usageCount: 0,
+      rating: 0,
+      reviews: 0
     },
-    personality: ['logical', 'helpful', 'patient', 'witty'],
-    voiceId: 'max-robot-voice'
+    ownership: {
+      createdBy: 'system',
+      sharedWith: [],
+      permissions: {}
+    }
   },
   {
     name: 'Professor Oak',
     description: 'A wise elderly scientist and educator',
-    appearance: {
+    category: 'educational',
+    tags: ['professor', 'science', 'educator'],
+    currentVersion: 'version-1',
+    versions: [createDefaultVersion({
       age: 'elderly',
       gender: 'male',
       style: 'realistic',
       colors: ['#8B4513', '#FFFFFF', '#2E8B57']
+    }, ['wise', 'patient', 'knowledgeable', 'caring'], 'professor-oak-voice')],
+    library: {
+      isPublic: true,
+      isReusable: true,
+      usageCount: 0,
+      rating: 0,
+      reviews: 0
     },
-    personality: ['wise', 'patient', 'knowledgeable', 'caring'],
-    voiceId: 'professor-oak-voice'
+    ownership: {
+      createdBy: 'system',
+      sharedWith: [],
+      permissions: {}
+    }
   },
   {
     name: 'Zoe',
     description: 'A trendy teenager who loves social media and fashion',
-    appearance: {
+    category: 'lifestyle',
+    tags: ['teen', 'fashion', 'social'],
+    currentVersion: 'version-1',
+    versions: [createDefaultVersion({
       age: 'teen',
       gender: 'female',
       style: 'modern',
       colors: ['#E91E63', '#9C27B0', '#FFD700']
+    }, ['trendy', 'social', 'creative', 'confident'], 'zoe-teen-voice')],
+    library: {
+      isPublic: true,
+      isReusable: true,
+      usageCount: 0,
+      rating: 0,
+      reviews: 0
     },
-    personality: ['trendy', 'social', 'creative', 'confident'],
-    voiceId: 'zoe-teen-voice'
+    ownership: {
+      createdBy: 'system',
+      sharedWith: [],
+      permissions: {}
+    }
   }
 ];
 

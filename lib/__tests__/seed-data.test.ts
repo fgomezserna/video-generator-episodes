@@ -10,25 +10,40 @@ describe('Seed Data', () => {
       seedData.characters.forEach((character, index) => {
         expect(character.name).toBeTruthy()
         expect(character.description).toBeTruthy()
-        expect(character.appearance).toBeDefined()
-        expect(character.appearance.age).toMatch(/^(child|teen|adult|elderly)$/)
-        expect(character.appearance.gender).toMatch(/^(male|female|non-binary)$/)
-        expect(character.appearance.style).toBeTruthy()
-        expect(character.appearance.colors).toBeInstanceOf(Array)
-        expect(character.appearance.colors.length).toBeGreaterThan(0)
-        expect(character.personality).toBeInstanceOf(Array)
-        expect(character.personality.length).toBeGreaterThan(0)
+        expect(character.category).toBeTruthy()
+        expect(character.tags).toBeInstanceOf(Array)
+        expect(character.currentVersion).toBeTruthy()
+        expect(character.versions).toBeInstanceOf(Array)
+        expect(character.versions.length).toBeGreaterThan(0)
+        
+        // Check current version
+        const currentVersion = character.versions.find(v => v.id === character.currentVersion)
+        expect(currentVersion).toBeDefined()
+        expect(currentVersion!.appearance).toBeDefined()
+        expect(currentVersion!.appearance.age).toMatch(/^(child|teen|adult|elderly)$/)
+        expect(currentVersion!.appearance.gender).toMatch(/^(male|female|non-binary)$/)
+        expect(currentVersion!.appearance.style).toBeTruthy()
+        expect(currentVersion!.appearance.colors).toBeInstanceOf(Array)
+        expect(currentVersion!.appearance.colors.length).toBeGreaterThan(0)
+        expect(currentVersion!.personality).toBeInstanceOf(Array)
+        expect(currentVersion!.personality.length).toBeGreaterThan(0)
         
         // Each color should be a valid hex color
-        character.appearance.colors.forEach(color => {
+        currentVersion!.appearance.colors.forEach(color => {
           expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
         })
       })
     })
 
     it('should have diverse character types', () => {
-      const ages = seedData.characters.map(c => c.appearance.age)
-      const genders = seedData.characters.map(c => c.appearance.gender)
+      const ages = seedData.characters.map(c => {
+        const currentVersion = c.versions.find(v => v.id === c.currentVersion)
+        return currentVersion?.appearance.age
+      }).filter(Boolean)
+      const genders = seedData.characters.map(c => {
+        const currentVersion = c.versions.find(v => v.id === c.currentVersion)
+        return currentVersion?.appearance.gender
+      }).filter(Boolean)
       
       // Should have multiple different ages and genders
       expect(new Set(ages).size).toBeGreaterThan(1)
@@ -38,14 +53,16 @@ describe('Seed Data', () => {
     it('should include required character Luna', () => {
       const luna = seedData.characters.find(c => c.name === 'Luna')
       expect(luna).toBeDefined()
-      expect(luna!.appearance.age).toBe('child')
-      expect(luna!.appearance.gender).toBe('female')
+      const lunaVersion = luna!.versions.find(v => v.id === luna!.currentVersion)
+      expect(lunaVersion?.appearance.age).toBe('child')
+      expect(lunaVersion?.appearance.gender).toBe('female')
     })
 
     it('should include required character Max', () => {
       const max = seedData.characters.find(c => c.name === 'Max')
       expect(max).toBeDefined()
-      expect(max!.appearance.gender).toBe('non-binary')
+      const maxVersion = max!.versions.find(v => v.id === max!.currentVersion)
+      expect(maxVersion?.appearance.gender).toBe('non-binary')
     })
   })
 

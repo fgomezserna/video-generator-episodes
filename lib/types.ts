@@ -1,15 +1,78 @@
-export interface Character {
+export interface CharacterReferenceImage {
   id: string;
-  name: string;
-  description: string;
-  voiceId?: string;
+  url: string;
+  type: 'reference' | 'generated' | 'variation';
+  metadata: {
+    width: number;
+    height: number;
+    format: string;
+    size: number;
+    generatedWith?: 'stable-diffusion' | 'dalle-3' | 'manual';
+    prompt?: string;
+    seed?: number;
+  };
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface CharacterVersion {
+  id: string;
+  version: string;
+  description?: string;
+  referenceImages: CharacterReferenceImage[];
   appearance: {
     age: 'child' | 'teen' | 'adult' | 'elderly';
     gender: 'male' | 'female' | 'non-binary';
     style: string;
     colors: string[];
+    physicalTraits: string[];
+    clothingStyle: string;
   };
   personality: string[];
+  voiceId?: string;
+  prompts: {
+    base: string;
+    consistency: string;
+    style: string;
+  };
+  metadata: {
+    generationSettings: {
+      model: 'stable-diffusion' | 'dalle-3';
+      styleStrength: number;
+      consistencyWeight: number;
+      guidanceScale: number;
+      steps: number;
+    };
+    performanceMetrics: {
+      avgGenerationTime: number;
+      consistencyScore: number;
+      qualityScore: number;
+    };
+  };
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface Character {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  tags: string[];
+  currentVersion: string;
+  versions: CharacterVersion[];
+  library: {
+    isPublic: boolean;
+    isReusable: boolean;
+    usageCount: number;
+    rating: number;
+    reviews: number;
+  };
+  ownership: {
+    createdBy: string;
+    sharedWith: string[];
+    permissions: Record<string, 'view' | 'edit' | 'admin'>;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -238,4 +301,65 @@ export interface NotificationEvent {
   status: 'pending' | 'sent' | 'failed';
   sentAt?: Date;
   createdAt: Date;
+}
+
+// AI Generation Services Types
+export interface AIImageGenerationRequest {
+  prompt: string;
+  model: 'stable-diffusion' | 'dalle-3';
+  referenceImages?: string[];
+  settings: {
+    width: number;
+    height: number;
+    guidanceScale: number;
+    steps: number;
+    seed?: number;
+    styleStrength?: number;
+    consistencyWeight?: number;
+  };
+  metadata?: {
+    characterId?: string;
+    versionId?: string;
+    type: 'reference' | 'generation' | 'variation';
+  };
+}
+
+export interface AIImageGenerationResponse {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  result?: {
+    imageUrl: string;
+    metadata: {
+      width: number;
+      height: number;
+      format: string;
+      size: number;
+      seed: number;
+      generationTime: number;
+      model: string;
+    };
+  };
+  error?: string;
+  createdAt: Date;
+  completedAt?: Date;
+}
+
+export interface PromptEngineering {
+  id: string;
+  characterId: string;
+  type: 'base' | 'consistency' | 'style' | 'variation';
+  template: string;
+  variables: Record<string, string>;
+  optimizations: {
+    consistencyKeywords: string[];
+    styleModifiers: string[];
+    negativePrompts: string[];
+  };
+  metadata: {
+    effectivenessScore: number;
+    usageCount: number;
+    avgConsistencyScore: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }

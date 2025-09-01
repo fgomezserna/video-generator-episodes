@@ -23,17 +23,63 @@ const mockedUpdateDoc = updateDoc as jest.MockedFunction<typeof updateDoc>
 const mockedDeleteDoc = deleteDoc as jest.MockedFunction<typeof deleteDoc>
 
 describe('CharactersDB', () => {
+  const mockCharacterVersion = {
+    id: 'version-1',
+    version: 'v1.0',
+    description: 'Initial version',
+    referenceImages: [],
+    appearance: {
+      age: 'child' as const,
+      gender: 'female' as const,
+      style: 'cartoon',
+      colors: ['#FF0000', '#00FF00'],
+      physicalTraits: ['blue eyes', 'blonde hair'],
+      clothingStyle: 'casual'
+    },
+    personality: ['friendly', 'curious'],
+    voiceId: 'test-voice',
+    prompts: {
+      base: 'A friendly cartoon character',
+      consistency: 'same character, consistent design',
+      style: 'cartoon style, clean lines'
+    },
+    metadata: {
+      generationSettings: {
+        model: 'stable-diffusion' as const,
+        styleStrength: 0.7,
+        consistencyWeight: 0.8,
+        guidanceScale: 7.5,
+        steps: 30
+      },
+      performanceMetrics: {
+        avgGenerationTime: 25000,
+        consistencyScore: 0.85,
+        qualityScore: 0.9
+      }
+    },
+    isActive: true,
+    createdAt: new Date('2023-01-01')
+  };
+
   const mockCharacter: Omit<Character, 'id' | 'createdAt' | 'updatedAt'> = {
     name: 'Test Character',
     description: 'A test character for unit testing',
-    appearance: {
-      age: 'child',
-      gender: 'female',
-      style: 'cartoon',
-      colors: ['#FF0000', '#00FF00']
+    category: 'cartoon',
+    tags: ['friendly', 'child'],
+    currentVersion: 'version-1',
+    versions: [mockCharacterVersion],
+    library: {
+      isPublic: false,
+      isReusable: true,
+      usageCount: 0,
+      rating: 0,
+      reviews: 0
     },
-    personality: ['friendly', 'curious'],
-    voiceId: 'test-voice'
+    ownership: {
+      createdBy: 'user-123',
+      sharedWith: [],
+      permissions: {}
+    }
   }
 
   beforeEach(() => {
@@ -68,19 +114,22 @@ describe('CharactersDB', () => {
       expect(addDocCall.updatedAt).toBeDefined()
     })
 
-    it('should preserve appearance and personality data', async () => {
+    it('should preserve character structure and version data', async () => {
       const characterId = 'character-123'
       mockedAddDoc.mockResolvedValue({ id: characterId } as any)
 
       await CharactersDB.create(mockCharacter)
 
       const addDocCall = mockedAddDoc.mock.calls[0][1]
-      expect(addDocCall.appearance.age).toBe('child')
-      expect(addDocCall.appearance.gender).toBe('female')
-      expect(addDocCall.appearance.style).toBe('cartoon')
-      expect(addDocCall.appearance.colors).toEqual(['#FF0000', '#00FF00'])
-      expect(addDocCall.personality).toEqual(['friendly', 'curious'])
-      expect(addDocCall.voiceId).toBe('test-voice')
+      expect(addDocCall.name).toBe('Test Character')
+      expect(addDocCall.category).toBe('cartoon')
+      expect(addDocCall.currentVersion).toBe('version-1')
+      expect(addDocCall.versions).toHaveLength(1)
+      expect(addDocCall.versions[0].appearance.age).toBe('child')
+      expect(addDocCall.versions[0].appearance.gender).toBe('female')
+      expect(addDocCall.versions[0].personality).toEqual(['friendly', 'curious'])
+      expect(addDocCall.library.isPublic).toBe(false)
+      expect(addDocCall.ownership.createdBy).toBe('user-123')
     })
   })
 
@@ -89,6 +138,11 @@ describe('CharactersDB', () => {
       const characterId = 'character-123'
       const mockDocData = {
         ...mockCharacter,
+        versions: [{
+          ...mockCharacterVersion,
+          createdAt: { toDate: () => new Date('2023-01-01') },
+          referenceImages: []
+        }],
         createdAt: { toDate: () => new Date('2023-01-01') },
         updatedAt: { toDate: () => new Date('2023-01-02') }
       }
@@ -107,7 +161,8 @@ describe('CharactersDB', () => {
       expect(result).toBeTruthy()
       expect(result!.id).toBe(characterId)
       expect(result!.name).toBe('Test Character')
-      expect(result!.appearance.age).toBe('child')
+      expect(result!.versions).toHaveLength(1)
+      expect(result!.versions[0].appearance.age).toBe('child')
     })
 
     it('should return null for non-existent character', async () => {
@@ -339,8 +394,8 @@ describe('CharactersDB', () => {
   describe('getByAppearance', () => {
     it('should filter by appearance criteria', async () => {
       const filters = {
-        age: 'child' as const,
-        gender: 'female' as const,
+        age: 'child',
+        gender: 'female',
         style: 'cartoon'
       }
 
@@ -349,7 +404,11 @@ describe('CharactersDB', () => {
           id: 'char-1',
           data: () => ({
             ...mockCharacter,
-            appearance: { ...mockCharacter.appearance, age: 'child', gender: 'female', style: 'cartoon' },
+            versions: [{
+              ...mockCharacterVersion,
+              appearance: { ...mockCharacterVersion.appearance, age: 'child', gender: 'female', style: 'cartoon' },
+              createdAt: { toDate: () => new Date() }
+            }],
             createdAt: { toDate: () => new Date() },
             updatedAt: { toDate: () => new Date() }
           })
@@ -359,7 +418,13 @@ describe('CharactersDB', () => {
           data: () => ({
             ...mockCharacter,
             name: 'Different Character',
-            appearance: { ...mockCharacter.appearance, age: 'adult', gender: 'male', style: 'realistic' },
+            currentVersion: 'version-2',
+            versions: [{
+              ...mockCharacterVersion,
+              id: 'version-2',
+              appearance: { ...mockCharacterVersion.appearance, age: 'adult', gender: 'male', style: 'realistic' },
+              createdAt: { toDate: () => new Date() }
+            }],
             createdAt: { toDate: () => new Date() },
             updatedAt: { toDate: () => new Date() }
           })
@@ -374,9 +439,9 @@ describe('CharactersDB', () => {
 
       const result = await CharactersDB.getByAppearance(filters)
 
-      // Should filter based on style (client-side filtering)
+      // Should filter based on current version appearance
       expect(result).toHaveLength(1)
-      expect(result[0].appearance.style).toBe('cartoon')
+      expect(result[0].versions[0].appearance.style).toBe('cartoon')
     })
 
     it('should handle partial filters', async () => {
