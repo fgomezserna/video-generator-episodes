@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'development' &&
   const hostname = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || 'localhost';
   
   try {
-    if (!auth.config.emulator) {
+    if (!(auth as any)._config?.emulator) {
       connectAuthEmulator(auth, `http://${hostname}:9099`, {
         disableWarnings: true
       });
