@@ -306,6 +306,8 @@ export interface NotificationEvent {
 // AI Provider Types (shared across different AI services)
 export type AIProvider = 'openai' | 'anthropic';
 
+export type VideoProvider = 'runway' | 'pika' | 'kling' | 'luma';
+
 export type ContentType = 'kids' | 'marketing' | 'documentary' | 'educational';
 
 // AI Image Generation Services Types (Character Consistency System)
@@ -473,4 +475,120 @@ export interface RateLimitConfig {
   requestsPerDay: number;
   costPerRequest: number;
   maxCostPerUser: number;
+}
+
+// Video Generation API Types
+export interface VideoGenerationRequest {
+  prompt: string;
+  provider?: VideoProvider;
+  settings: {
+    duration: number;
+    aspectRatio: '16:9' | '9:16' | '4:3' | '1:1';
+    quality: 'draft' | 'standard' | 'high' | 'premium';
+    style?: string;
+    seed?: number;
+    motionIntensity?: number;
+    cameraMovement?: 'static' | 'slow' | 'medium' | 'dynamic';
+    frameRate?: 24 | 30 | 60;
+  };
+  referenceImages?: string[];
+  metadata?: {
+    projectId?: string;
+    sceneId?: string;
+    userId: string;
+    priority: JobPriority;
+  };
+}
+
+export interface VideoGenerationResponse {
+  id: string;
+  provider: VideoProvider;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: {
+    videoUrl: string;
+    thumbnailUrl?: string;
+    metadata: {
+      duration: number;
+      resolution: string;
+      fps: number;
+      fileSize: number;
+      format: string;
+      generationTime: number;
+      cost: number;
+    };
+  };
+  error?: {
+    message: string;
+    code: string;
+    retryable: boolean;
+  };
+  estimatedCompletionTime?: Date;
+  createdAt: Date;
+  completedAt?: Date;
+}
+
+export interface VideoProviderConfig {
+  provider: VideoProvider;
+  apiKey: string;
+  baseUrl: string;
+  rateLimit: {
+    requestsPerMinute: number;
+    requestsPerHour: number;
+    requestsPerDay: number;
+  };
+  pricing: {
+    costPerSecond: number;
+    qualityMultipliers: Record<string, number>;
+  };
+  capabilities: {
+    maxDuration: number;
+    supportedAspectRatios: string[];
+    supportedQualities: string[];
+    supportsReferenceImages: boolean;
+    supportsStyleTransfer: boolean;
+  };
+  isEnabled: boolean;
+}
+
+export interface VideoProviderMetrics {
+  id: string;
+  provider: VideoProvider;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageGenerationTime: number;
+  averageQueueTime: number;
+  uptime: number;
+  costPerRequest: number;
+  qualityScore: number;
+  timestamp: Date;
+}
+
+export interface VideoCacheEntry {
+  id: string;
+  promptHash: string;
+  provider: VideoProvider;
+  settings: VideoGenerationRequest['settings'];
+  videoUrl: string;
+  thumbnailUrl?: string;
+  metadata: {
+    duration: number;
+    fileSize: number;
+    quality: string;
+  };
+  usageCount: number;
+  lastAccessed: Date;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+export interface VideoRateLimitConfig {
+  provider: VideoProvider;
+  requestsPerMinute: number;
+  requestsPerHour: number;
+  requestsPerDay: number;
+  costPerRequest: number;
+  maxCostPerUser: number;
+  maxConcurrentJobs: number;
 }
