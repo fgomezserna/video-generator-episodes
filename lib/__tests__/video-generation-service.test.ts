@@ -504,11 +504,11 @@ describe('VideoGenerationService', () => {
     it('should handle metrics tracking errors', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      // Force an error in metrics tracking by making the request malformed
-      const malformedResponse = { ...mockResponse };
-      delete (malformedResponse as any).provider;
-
-      mockManager.generateVideo.mockResolvedValueOnce(malformedResponse);
+      // Mock JSON.stringify to throw error during tracking
+      const originalStringify = JSON.stringify;
+      jest.spyOn(JSON, 'stringify').mockImplementationOnce(() => {
+        throw new Error('Serialization failed');
+      });
 
       await service.generateVideo(mockRequest);
 
@@ -517,6 +517,7 @@ describe('VideoGenerationService', () => {
         expect.any(String)
       );
 
+      JSON.stringify = originalStringify;
       consoleErrorSpy.mockRestore();
     });
   });

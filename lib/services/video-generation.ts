@@ -48,29 +48,34 @@ export class VideoGenerationService {
     }
 
     if (this.cache) {
-      const cachedEntry = await this.cache.get(request);
-      if (cachedEntry) {
-        return {
-          id: `cached_${Date.now()}`,
-          provider: cachedEntry.provider,
-          status: 'completed',
-          progress: 100,
-          result: {
-            videoUrl: cachedEntry.videoUrl,
-            thumbnailUrl: cachedEntry.thumbnailUrl,
-            metadata: {
-              duration: cachedEntry.metadata.duration,
-              resolution: '1920x1080',
-              fps: 30,
-              fileSize: cachedEntry.metadata.fileSize,
-              format: 'mp4',
-              generationTime: 0,
-              cost: 0,
+      try {
+        const cachedEntry = await this.cache.get(request);
+        if (cachedEntry) {
+          return {
+            id: `cached_${Date.now()}`,
+            provider: cachedEntry.provider,
+            status: 'completed',
+            progress: 100,
+            result: {
+              videoUrl: cachedEntry.videoUrl,
+              thumbnailUrl: cachedEntry.thumbnailUrl,
+              metadata: {
+                duration: cachedEntry.metadata.duration,
+                resolution: '1920x1080',
+                fps: 30,
+                fileSize: cachedEntry.metadata.fileSize,
+                format: 'mp4',
+                generationTime: 0,
+                cost: 0,
+              },
             },
-          },
-          createdAt: new Date(),
-          completedAt: new Date(),
-        };
+            createdAt: new Date(),
+            completedAt: new Date(),
+          };
+        }
+      } catch (error) {
+        // Cache error shouldn't prevent video generation
+        console.warn('Cache get failed:', error);
       }
     }
 
@@ -80,11 +85,18 @@ export class VideoGenerationService {
       request.metadata.userId
     );
 
-    if (this.cache && response.status === 'completed') {
-      await this.cache.set(request, response);
+    if (this.cache && response?.status === 'completed') {
+      try {
+        await this.cache.set(request, response);
+      } catch (error) {
+        // Cache error shouldn't prevent returning the response
+        console.warn('Cache set failed:', error);
+      }
     }
 
-    await this.trackUsageMetrics(request, response);
+    if (response) {
+      await this.trackUsageMetrics(request, response);
+    }
 
     return response;
   }
