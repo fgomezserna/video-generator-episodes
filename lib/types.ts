@@ -137,6 +137,96 @@ export type WorkflowState =
   | 'failed' 
   | 'archived';
 
+export type PipelineStage = 
+  | 'idea'
+  | 'idea_review'
+  | 'script'
+  | 'script_approval'
+  | 'storyboard'
+  | 'storyboard_approval'
+  | 'video'
+  | 'video_qa'
+  | 'published';
+
+export type CheckpointStatus = 'pending' | 'approved' | 'rejected' | 'needs_revision';
+
+export interface PipelineCheckpoint {
+  id: string;
+  stage: PipelineStage;
+  status: CheckpointStatus;
+  assignedTo: string[];
+  reviewedBy?: string;
+  feedback?: string;
+  submittedAt: Date;
+  reviewedAt?: Date;
+  dueDate?: Date;
+  requiredApprovals: number;
+  currentApprovals: number;
+  approvals: Array<{
+    userId: string;
+    status: 'approved' | 'rejected';
+    feedback?: string;
+    timestamp: Date;
+  }>;
+  metadata?: Record<string, any>;
+}
+
+export interface WorkflowPipeline {
+  id: string;
+  projectId: string;
+  currentStage: PipelineStage;
+  stages: Array<{
+    stage: PipelineStage;
+    status: 'not_started' | 'in_progress' | 'completed' | 'skipped' | 'failed';
+    startedAt?: Date;
+    completedAt?: Date;
+    duration?: number;
+    checkpoint?: PipelineCheckpoint;
+    artifacts?: Array<{
+      type: 'script' | 'storyboard' | 'video' | 'feedback';
+      url?: string;
+      data?: any;
+      createdAt: Date;
+    }>;
+  }>;
+  metrics: {
+    totalDuration?: number;
+    stageMetrics: Record<PipelineStage, {
+      averageDuration: number;
+      completionRate: number;
+      revisionRate: number;
+    }>;
+  };
+  notifications: {
+    email: boolean;
+    push: boolean;
+    slack?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PipelineRule {
+  id: string;
+  name: string;
+  description: string;
+  stage: PipelineStage;
+  conditions: Array<{
+    field: string;
+    operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains';
+    value: any;
+  }>;
+  actions: Array<{
+    type: 'require_approval' | 'auto_approve' | 'notify' | 'assign_reviewer' | 'set_due_date';
+    config: Record<string, any>;
+  }>;
+  isActive: boolean;
+  priority: number;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Project {
   id: string;
   userId: string;
