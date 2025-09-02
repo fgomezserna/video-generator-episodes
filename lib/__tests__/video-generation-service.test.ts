@@ -1,6 +1,20 @@
 import { VideoGenerationService, createVideoGenerationService } from '../services/video-generation';
 import { VideoGenerationRequest, VideoGenerationResponse } from '../types';
 
+// Mock Firebase Functions first
+jest.mock('firebase/functions', () => ({
+  httpsCallable: jest.fn(() => jest.fn()),
+  getFunctions: jest.fn(),
+  connectFunctionsEmulator: jest.fn()
+}));
+
+// Mock Firebase
+jest.mock('../firebase', () => ({
+  db: {},
+  functions: {},
+  auth: {}
+}));
+
 // Mock all dependencies
 jest.mock('../video/manager');
 jest.mock('../video/cache');

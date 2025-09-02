@@ -179,7 +179,8 @@ export class VideoManager {
       return this.getProvidersByQuality(request);
     }
 
-    return this.getProvidersByReliability();
+    // Use custom fallback order if configured, otherwise reliability-based
+    return this.fallbackOrder.filter(provider => this.isProviderAvailable(provider));
   }
 
   private getProvidersByCost(request: VideoGenerationRequest): VideoProvider[] {

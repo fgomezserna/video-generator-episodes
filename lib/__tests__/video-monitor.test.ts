@@ -1,7 +1,25 @@
 import { VideoMonitor, AlertConfig } from '../video/monitor';
 import { VideoProvider, VideoProviderMetrics } from '../types';
 
-// Mock fetch for testing
+// Mock fetch for testing with complete Response interface
+const createMockResponse = (ok: boolean, status: number): Response => ({
+  ok,
+  status,
+  statusText: ok ? 'OK' : 'Internal Server Error',
+  headers: new Headers(),
+  url: '',
+  redirected: false,
+  type: 'basic',
+  body: null,
+  bodyUsed: false,
+  clone: jest.fn(),
+  arrayBuffer: jest.fn(),
+  blob: jest.fn(),
+  formData: jest.fn(),
+  json: jest.fn(),
+  text: jest.fn()
+} as Response);
+
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
@@ -29,10 +47,7 @@ describe('VideoMonitor', () => {
 
   describe('Health Checks', () => {
     it('should perform health checks for all providers', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-      } as Response);
+      mockFetch.mockResolvedValue(createMockResponse(true, 200));
 
       const providers: VideoProvider[] = ['runway', 'pika', 'kling', 'luma'];
       const results = await monitor.performHealthChecks(providers);
@@ -45,20 +60,15 @@ describe('VideoMonitor', () => {
     it('should detect unhealthy providers', async () => {
       mockFetch.mockImplementation((url) => {
         if (url === 'https://api.runwayml.com/health') {
-          return Promise.resolve({
-            ok: false,
-            status: 500,
-          } as Response);
+          return Promise.resolve(createMockResponse(false, 500));
         }
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-        } as Response);
+        return Promise.resolve(createMockResponse(true, 200));
       });
 
       const providers: VideoProvider[] = ['runway', 'pika'];
       const results = await monitor.performHealthChecks(providers);
 
+      expect(results).toHaveLength(2);
       expect(results[0].isHealthy).toBe(false);
       expect(results[1].isHealthy).toBe(true);
       expect(results[0].provider).toBe('runway');
@@ -78,10 +88,7 @@ describe('VideoMonitor', () => {
       mockFetch.mockImplementation(() => {
         return new Promise(resolve => {
           setTimeout(() => {
-            resolve({
-              ok: true,
-              status: 200,
-            } as Response);
+            resolve(createMockResponse(true, 200));
           }, 100);
         });
       });
