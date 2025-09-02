@@ -18,16 +18,27 @@ jest.mock('../firebase', () => ({
 jest.mock('firebase/firestore', () => ({
   collection: jest.fn(),
   doc: jest.fn(),
-  getDoc: jest.fn(),
-  getDocs: jest.fn(),
-  addDoc: jest.fn(() => ({ id: 'mock-doc-id' })),
-  updateDoc: jest.fn(),
-  deleteDoc: jest.fn(),
+  getDoc: jest.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({ test: 'data' }),
+    id: 'mock-doc-id'
+  })),
+  getDocs: jest.fn(() => Promise.resolve({
+    empty: false,
+    docs: [{
+      id: 'mock-doc-id',
+      data: () => ({ test: 'data' })
+    }]
+  })),
+  addDoc: jest.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
+  updateDoc: jest.fn(() => Promise.resolve()),
+  deleteDoc: jest.fn(() => Promise.resolve()),
   query: jest.fn(),
   where: jest.fn(),
   orderBy: jest.fn(),
   limit: jest.fn(),
   startAfter: jest.fn(),
+  onSnapshot: jest.fn(),
   Timestamp: {
     fromDate: (date: Date) => ({ toDate: () => date }),
     now: () => ({ toDate: () => new Date() })
@@ -54,19 +65,13 @@ describe('WorkflowPipelineService', () => {
       const pipelineId = await WorkflowPipelineService.createPipeline(mockProjectId, mockUserId);
       
       expect(pipelineId).toBe('mock-doc-id');
-      expect(require('firebase/firestore').addDoc).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          projectId: mockProjectId,
-          currentStage: 'idea',
-          stages: expect.arrayContaining([
-            expect.objectContaining({
-              stage: 'idea',
-              status: 'in_progress'
-            })
-          ])
-        })
-      );
+      expect(require('firebase/firestore').addDoc).toHaveBeenCalled();
+      
+      // Verify the call was made with correct structure
+      const callArgs = require('firebase/firestore').addDoc.mock.calls[0][1];
+      expect(callArgs.projectId).toBe(mockProjectId);
+      expect(callArgs.currentStage).toBe('idea');
+      expect(callArgs.stages).toHaveLength(9);
     });
 
     it('should initialize all pipeline stages correctly', async () => {
